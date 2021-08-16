@@ -1,0 +1,122 @@
+---
+title: "Lobster Exploration"
+author: "Scout Leonard"
+date: "8/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(janitor)
+library(dplyr)
+library(tidyverse)
+
+lobster_abundance <- read.csv(here::here("data", "abundancedata.csv"), na = c("-99999", " ")) %>% 
+  clean_names() %>% 
+  uncount(count)
+```
+
+## Task 2
+
+### Find counts and means by site and year 
+
+```{r}
+counts_summary <- lobster_abundance %>% 
+  group_by(site, year) %>% 
+  summarize(mean_carapace_length = mean(size_mm, na.rm = TRUE),
+            total_counts = n())
+
+# create a ggplot graph of total lobsters observed (y axis) by year (x axis) in the study, groups aesthetically by site
+
+ggplot(data = counts_summary, aes(x = year, y = total_counts)) +
+  geom_line( aes(color = site))
+```
+
+#### Find the proportion of legal lobsters at each site for 2020
+
+```{r}
+lobsters_2020 <- lobster_abundance %>% 
+  filter(year == 2020)
+
+lobsters_2020 <- lobsters_2020 %>% 
+  mutate(legal = case_when(
+    size_mm >= 79.76 ~ "yes",
+    size_mm < 79.76 ~ "no"
+  ))
+
+lobsters_2020_legal <- lobsters_2020 %>% 
+  group_by(site, legal) %>% 
+  summarize(number_legal = n())
+
+ggplot(data = lobsters_2020_legal, aes(x = site, y = number_legal, fill = legal)) +
+  geom_col(position = "fill")
+```
+
+NAPL and IVEE had the largest proportion of legal lobsters in 2020. The other sites are MPS, which may explain why there are a greater proportion of illegal lobsters. 
+
+## Task 3
+
+#### filter() practice
+
+```{r}
+ex_a <- lobster_abundance %>% 
+  filter(site %in% c("IVEE", "CARP", "NAPL"))
+
+unique(ex_a$site)
+
+ex_b <- lobster_abundance %>% 
+  filter(month == 8)
+
+unique(ex_b$month)
+
+ex_c <- lobster_abundance %>% 
+  filter(site == "AQUE" | size_mm > 70)
+
+ex_d <- lobster_abundance %>% 
+  filter(site != "NAPL")
+
+unique(ex_d$site)
+```
+#### group_by() %>% summarize() practice
+
+```{r}
+ex_e <- lobster_abundance %>% 
+  group_by(site, month) %>% 
+  summarize(max_carapace_length = max(size_mm), na.rm = TRUE)
+```
+
+#### mutate() practice
+
+```{r}
+ex_g <- lobster_abundance %>% 
+  mutate(size_cm = size_mm / 10)
+
+ex_h <- lobster_abundance %>% 
+  mutate(site = tolower(site))
+
+ex_i <- lobster_abundance %>% 
+  mutate(area = as.character(area))
+
+class(ex_i$area)
+```
+#### case_when() practice
+
+```{r}
+ex_j <- lobster_abundance %>% 
+  mutate(size_bin = case_when(
+    size_mm <= 70 ~ "small",
+    size_mm > 70 ~ "large"
+  ))
+
+ex_k <- lobster_abundance %>% 
+  mutate(designation = case_when(
+    site == "IVEE" ~ "MPA",
+    site == "NAPL" ~ "MPA",
+    TRUE ~ "not MPA"
+  ))
+```
+
+
+
+
